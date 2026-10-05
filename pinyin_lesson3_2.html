@@ -51,7 +51,7 @@ audio{max-width:100%;height:36px;margin-top:8px}
 </div>
 <div id="pqPane1"><div class="pq-grid" id="pqG1"></div></div>
 <div id="pqPane2" style="display:none"><div class="pq-grid2" id="pqG2"></div></div>
-<div class="pq-legend">Слоги даны без тонов — нажми кнопку с тоном (ˉ ˊ ˇ ˋ) из аудио; кнопка • — нейтральный тон (轻声). Первая проверка показывает только верно/неверно; если проверить слог второй раз — покажется правильный ответ.</div>
+<div class="pq-legend">Слоги даны без тонов — нажми кнопку с тоном (ˉ ˊ ˇ ˋ) из аудио; во вторых слогах слов доступен нейтральный тон (кнопка •). Первая проверка показывает только верно/неверно; если проверить слог второй раз — покажется правильный ответ.</div>
 <div class="pq-foot">
   <button class="pq-btn" id="pqCheck">Проверить</button>
   <button class="pq-btn ghost" id="pqReset">Сбросить всё</button>
@@ -90,19 +90,20 @@ function mark(base,tone){
 function gradeOf(s,m){return Math.round(s/m*10);}
 function gradeWord(g){return g>=9?"отлично":(g>=7?"хорошо":(g>=6?"удовлетворительно":"неудовлетворительно"));}
 var items1=[],items2=[];
-function makeToneSyl(base,allowed,hz){
+function makeToneSyl(base,allowed,hz,neutral){
   var box=document.createElement("div");box.className="pq-item";
   box.innerHTML='<span class="pq-ini">'+base+'</span><span class="pq-tones">'+
-   [1,2,3,4,5].map(function(t){return '<button type="button" class="pq-tn" data-t="'+t+'">'+["ˉ","ˊ","ˇ","ˋ","•"][t-1]+"</button>"}).join("")+
+   (neutral?[1,2,3,4,5]:[1,2,3,4]).map(function(t){return '<button type="button" class="pq-tn" data-t="'+t+'">'+["ˉ","ˊ","ˇ","ˋ","•"][t-1]+"</button>"}).join("")+
    '</span><span class="pq-fb"></span>';
   var it={base:base,allowed:allowed,hz:hz||"",tone:0,pts:0,checks:0,box:box,fb:box.querySelector(".pq-fb"),btns:box.querySelectorAll(".pq-tn")};
-  for(var k=0;k<5;k++){(function(b){b.addEventListener("click",function(){it.tone=(it.tone===+b.dataset.t)?0:+b.dataset.t;
-    for(var j=0;j<5;j++)it.btns[j].classList.toggle("on",it.tone===j+1);});})(it.btns[k]);}
+  var nb=neutral?5:4;
+  for(var k=0;k<nb;k++){(function(b){b.addEventListener("click",function(){it.tone=(it.tone===+b.dataset.t)?0:+b.dataset.t;
+    for(var j=0;j<nb;j++)it.btns[j].classList.toggle("on",it.tone===j+1);});})(it.btns[k]);}
   return it;
 }
 var g1=document.getElementById("pqG1");
 T1.forEach(function(d,i){
-  var it=makeToneSyl(d[0],d[1]);
+  var it=makeToneSyl(d[0],d[1],"",false);
   var n=document.createElement("span");n.className="pq-num";n.textContent=(i+1)+".";
   it.box.insertBefore(n,it.box.firstChild);
   items1.push(it);g1.appendChild(it.box);
@@ -112,7 +113,7 @@ T2.forEach(function(w,i){
   var card=document.createElement("div");card.className="pq-item";card.style.flexWrap="nowrap";
   var n=document.createElement("span");n.className="pq-num";n.textContent=(i+1)+".";
   card.appendChild(n);
-  w[1].forEach(function(s){var it=makeToneSyl(s[0],s[1],w[0]);items2.push(it);card.appendChild(it.box);});
+  w[1].forEach(function(s,idx){var it=makeToneSyl(s[0],s[1],w[0],idx===1);items2.push(it);card.appendChild(it.box);});
   g2.appendChild(card);
 });
 var scores={1:null,2:null};
@@ -147,7 +148,7 @@ document.getElementById("pqCheck").addEventListener("click",function(){
 document.getElementById("pqReset").addEventListener("click",function(){
   items1.concat(items2).forEach(function(it){
     it.tone=0;it.pts=0;it.checks=0;it.fb.textContent="";it.box.classList.remove("ok","bad");
-    for(var j=0;j<5;j++)it.btns[j].classList.remove("on");
+    for(var j=0;j<it.btns.length;j++)it.btns[j].classList.remove("on");
   });
   scores={1:null,2:null};totals();
 });
