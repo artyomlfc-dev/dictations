@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Диктант · 第二十三课 · 你学了多长时间汉语？</title>
+<style>
+  :root{
+    --ink:#1f2a37;
+    --accent:#2563eb;
+    --accent-dark:#1e40af;
+    --ok:#15803d;
+    --ok-bg:#dcfce7;
+    --bad:#b91c1c;
+    --bad-bg:#fee2e2;
+    --card:#ffffff;
+    --page:#f1f5f9;
+    --line:#e2e8f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:"Segoe UI","Helvetica Neue",Arial,"Noto Sans SC","Microsoft YaHei",sans-serif;
+    background:var(--page);
+    color:var(--ink);
+    line-height:2.1;
+    padding:24px 16px 80px;
+  }
+  .wrap{max-width:820px;margin:0 auto;}
+
+  header{
+    text-align:center;
+    margin-bottom:24px;
+  }
+  header h1{font-size:1.5rem;letter-spacing:1px;}
+  header .sub{color:#64748b;font-size:.95rem;margin-top:4px;}
+
+  /* ===== переключатель лицевая/оборотная сторона ===== */
+  .flip-stage{perspective:1600px;}
+  .flip-inner{
+    position:relative;
+    transform-style:preserve-3d;
+    transition:transform .7s cubic-bezier(.4,.2,.2,1);
+  }
+  .flipped .flip-inner{transform:rotateY(180deg);}
+  .face{
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+  }
+  .face.back{
+    position:absolute;inset:0;
+    transform:rotateY(180deg);
+    overflow:auto;
+  }
+
+  .btn{
+    display:inline-block;
+    border:none;border-radius:10px;
+    padding:10px 20px;
+    font-size:.95rem;cursor:pointer;
+    background:var(--accent);color:#fff;
+    transition:background .15s;
+  }
+  .btn:hover{background:var(--accent-dark);}
+  .btn.ghost{background:#fff;color:var(--accent);border:1.5px solid var(--accent);}
+  .btn.ghost:hover{background:#eff6ff;}
+  .btn.gray{background:#94a3b8;}
+  .btn.gray:hover{background:#64748b;}
+
+  .toolbar{
+    display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+    margin:18px 0 26px;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px 30px;
+    margin-bottom:28px;
+    box-shadow:0 2px 8px rgba(15,23,42,.05);
+  }
+  .card h2{
+    font-size:1.15rem;margin-bottom:6px;color:var(--accent-dark);
+  }
+  .card .note{font-size:.85rem;color:#64748b;margin-bottom:14px;}
+
+  .audio-row{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:16px;flex-wrap:wrap;
+  }
+  .audio-row .audio-label{font-size:.85rem;color:#64748b;}
+  .audio-row audio{
+    height:38px;width:min(420px,100%);
+    outline:none;
+  }
+
+  /* ===== подсказки для новых слов ===== */
+  .word{
+    border-bottom:1.5px dashed var(--accent);
+    cursor:help;
+    position:relative;
+  }
+  .word::after{
+    content:attr(data-py) "\A" attr(data-ru);
+    white-space:pre;
+    position:absolute;
+    bottom:130%;
+    left:50%;
+    transform:translateX(-50%);
+    background:#1f2a37;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:8px;
+    font-size:.78rem;
+    line-height:1.5;
+    letter-spacing:0;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .15s;
+    z-index:20;
+    box-shadow:0 4px 12px rgba(15,23,42,.25);
+  }
+  .word:hover::after,.word.show::after{opacity:1;}
+
+  .passage{font-size:1.25rem;letter-spacing:.5px;}
+  .passage .p-num{color:#94a3b8;margin-right:10px;}
+
+  .blank{
+    display:inline-block;
+    border:none;
+    border-bottom:2px solid var(--accent);
+    background:#eff6ff;
+    text-align:center;
+    font-size:1.15rem;
+    font-family:inherit;
+    color:var(--ink);
+    padding:2px 4px;
+    margin:0 3px;
+    border-radius:6px 6px 0 0;
+    outline:none;
+    transition:background .2s,border-color .2s;
+  }
+  .blank:focus{background:#dbeafe;}
+  .blank.ok{background:var(--ok-bg);border-bottom-color:var(--ok);}
+  .blank.bad{background:var(--bad-bg);border-bottom-color:var(--bad);}
+
+  .score{
+    text-align:center;
+    font-size:1.05rem;
+    font-weight:600;
+    margin-top:8px;
+    min-height:1.6em;
+  }
+  .score.good{color:var(--ok);}
+  .score.poor{color:var(--bad);}
+
+  footer{
+    text-align:center;color:#94a3b8;font-size:.8rem;margin-top:30px;
+  }
+
+  /* ===== оборотная сторона: 口语 ===== */
+  .back-inner h2{
+    text-align:center;color:var(--accent-dark);
+    margin-bottom:4px;
+  }
+  .back-inner .sub{
+    text-align:center;color:#64748b;font-size:.9rem;margin-bottom:22px;
+  }
+  table.kouyu{
+    width:100%;
+    border-collapse:collapse;
+    font-size:1.05rem;
+  }
+  table.kouyu th,table.kouyu td{
+    border:1px solid var(--line);
+    padding:8px 12px;
+    text-align:left;
+  }
+  table.kouyu th{
+    background:#eff6ff;color:var(--accent-dark);
+  }
+  table.kouyu td.written{color:#334155;}
+  table.kouyu td.spoken{color:#b45309;}
+
+  @media print{
+    body{background:#fff;}
+    .toolbar,.flip-btn{display:none !important;}
+    .face.back{display:none !important;}
+    .flipped .flip-inner{transform:none !important;}
+    .card{box-shadow:none;border:none;}
+    .blank{border-bottom:1.5px solid #333;background:#fff;}
+  }
+  @media (max-width:600px){
+    .passage{font-size:1.1rem;}
+    .card{padding:18px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>第二十三课 · Диктант с пропусками</h1>
+    <div class="sub">Тема: 你学了多长时间汉语？ · Впишите пропущенные иероглифы · Подчёркнутые слова — с подсказкой (наведите или нажмите)</div>
+  </header>
+
+  <div class="toolbar">
+    <button class="btn" id="checkBtn">Проверить ✓</button>
+    <button class="btn ghost" id="answersBtn" style="display:none">Показать ответы</button>
+    <button class="btn ghost" id="clearBtn">Очистить</button>
+    <button class="btn gray flip-btn" id="flipBtn">📖 口语 · разговорные варианты</button>
+  </div>
+
+  <div class="flip-stage" id="stage">
+    <div class="flip-inner">
+
+      <!-- ===== ЛИЦЕВАЯ СТОРОНА: диктант ===== -->
+      <div class="face front">
+
+        <div class="card">
+          <h2>Текст 1 · 对不起，我迟到了</h2>
+          <div class="note">Диалог про опоздание</div>
+          <div class="audio-row">
+            <audio controls preload="none" src="lesson23_text1.mp3"></audio>
+            <span class="audio-label">▶ аудио к тексту 1</span>
+          </div>
+          <div class="passage" id="text1">
+            <span class="p-num">1.</span><input class="blank" data-answer="对不起" style="width:4.6em">，我<span class="word" data-py="chídào" data-ru="опаздывать">迟到</span>了。<br>
+            <span class="p-num">2.</span><input class="blank" data-answer="没关系" style="width:4.6em">，<input class="blank" data-answer="路上" style="width:3em"><span class="word" data-py="dǔchē" data-ru="пробка, затор">堵车</span>了吗？<br>
+            <span class="p-num">3.</span><input class="blank" data-answer="没有" style="width:3em">，<input class="blank" data-answer="我的自行车" style="width:6.6em"><span class="word" data-py="huài" data-ru="1) плохой; 2) сломаться">坏</span>了，<span class="word" data-py="lúntāi" data-ru="шина, покрышка">轮胎</span><span class="word" data-py="pò" data-ru="сломать; порвать">破</span>了。<br>
+            <span class="p-num">4.</span><input class="blank" data-answer="是吗" style="width:3em">？真<span class="word" data-py="dǎoméi" data-ru="невезение; не везёт">倒霉</span>。<span class="word" data-py="huàn" data-ru="менять">换</span>轮胎换<input class="blank" data-answer="了多长时间" style="width:7em">？<br>
+            <span class="p-num">5.</span><span class="word" data-py="dàgài" data-ru="приблизительно">大概</span>换了<input class="blank" data-answer="半个小时" style="width:5.4em">。平时一个钟头<input class="blank" data-answer="就能到" style="width:4.2em">，<input class="blank" data-answer="可是今天" style="width:5.2em">我<span class="word" data-py="huā" data-ru="зд. тратить">花</span>了<input class="blank" data-answer="一个半小时" style="width:6em">。<input class="blank" data-answer="你等了多长时间" style="width:8.6em">？<br>
+            <span class="p-num">6.</span>大概二十分钟吧。<br>
+            <span class="p-num">7.</span><span class="word" data-py="zháojí" data-ru="волноваться">着急</span>了吧？<input class="blank" data-answer="真对不起" style="width:5.2em">。<br>
+            <span class="p-num">8.</span><input class="blank" data-answer="没事儿" style="width:3.6em">。
+          </div>
+          <div class="score" id="score1"></div>
+        </div>
+
+        <div class="card">
+          <h2>Текст 2 · 你学了多长时间英语？</h2>
+          <div class="note">Диалог про изучение языков</div>
+          <div class="audio-row">
+            <audio controls preload="none" src="lesson23_text2.mp3"></audio>
+            <span class="audio-label">▶ аудио к тексту 2</span>
+          </div>
+          <div class="passage" id="text2">
+            <span class="p-num">1.</span>你<input class="blank" data-answer="用英语写的" style="width:6em">作文真不错。<br>
+            <span class="p-num">2.</span>谢谢！不过，<input class="blank" data-answer="我的口语还不行" style="width:9em">。<br>
+            <span class="p-num">3.</span>我看挺好的。<input class="blank" data-answer="你学了多长时间英语" style="width:11em">？<br>
+            <span class="p-num">4.</span>我从<span class="word" data-py="chūzhōng" data-ru="неполная средняя школа">初中</span><input class="blank" data-answer="开始学习" style="width:5em">，<input class="blank" data-answer="已经学了十年" style="width:7.6em">了。<br>
+            <span class="p-num">5.</span>十年？<input class="blank" data-answer="那么长时间" style="width:6em">？<br>
+            <span class="p-num">6.</span>是啊！<input class="blank" data-answer="我的语法还可以" style="width:9em">，<span class="word" data-py="jiǎndān" data-ru="простой (объективно)">简单</span>的翻译<input class="blank" data-answer="也没问题" style="width:5em">，可是<input class="blank" data-answer="不太会说" style="width:5em">。<input class="blank" data-answer="你学了多长时间汉语" style="width:11em">？<br>
+            <span class="p-num">7.</span>我<input class="blank" data-answer="学了半年了" style="width:6.4em">。<br>
+            <span class="p-num">8.</span>下学期你<input class="blank" data-answer="还在北京学习" style="width:7.6em">吗？<br>
+            <span class="p-num">9.</span>当然了，我<input class="blank" data-answer="打算在中国学习两年" style="width:11em">呢。
+          </div>
+          <div class="score" id="score2"></div>
+        </div>
+
+        <div class="score" id="scoreTotal" style="font-size:1.2rem;margin-top:20px;"></div>
+      </div>
+
+      <!-- ===== ОБОРОТНАЯ СТОРОНА: 口语 ===== -->
+      <div class="face back">
+        <div class="card back-inner">
+          <h2>口语 · Разговорные варианты</h2>
+          <div class="sub">Лицевая сторона — типичные, книжные формы; здесь — как это звучит в живой речи</div>
+          <table class="kouyu">
+            <tr><th>书面语 (в тексте)</th><th>口语 (в речи)</th></tr>
+            <tr><td class="written">对不起，我迟到了。</td><td class="spoken">不好意思，我来晚了。/ 对不住，迟到了。</td></tr>
+            <tr><td class="written">没关系。</td><td class="spoken">没事儿。/ 不要紧。</td></tr>
+            <tr><td class="written">是吗？真倒霉。</td><td class="spoken">真的假的？太倒霉了。/ 不会吧，倒霉透了。</td></tr>
+            <tr><td class="written">一个钟头</td><td class="spoken">一个小时（«钟头» — разг.）</td></tr>
+            <tr><td class="written">真对不起。</td><td class="spoken">真不好意思。/ 实在对不住。</td></tr>
+            <tr><td class="written">没事儿。</td><td class="spoken">没事。/ 没事儿没事儿。</td></tr>
+            <tr><td class="written">我的口语还不行。</td><td class="spoken">我口语还不怎么样。/ 口语还差得远呢。</td></tr>
+            <tr><td class="written">我看挺好的。</td><td class="spoken">我觉得挺好的。/ 我觉得不错啊。</td></tr>
+            <tr><td class="written">简单的翻译也没问题。</td><td class="spoken">简单的翻译不成问题。</td></tr>
+            <tr><td class="written">可是不太会说。</td><td class="spoken">就是说不太出来。/ 可就是说不利索。</td></tr>
+            <tr><td class="written">十年？那么长时间？</td><td class="spoken">十年？这么久？/ 十年啊？这么长时间！</td></tr>
+            <tr><td class="written">当然了。</td><td class="spoken">那当然。/ 肯定啊。</td></tr>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>第23课 · Диктант с пропусками · для печати ответы скрыты</footer>
+</div>
+
+<script>
+  var answersVisible = false;
+
+  function allBlanks(){ return Array.from(document.querySelectorAll('.blank')); }
+
+  function normalize(s){
+    return (s || '').replace(/[\s　]+/g,'').replace(/[，。？！、；：,.?!;:]/g,'');
+  }
+
+  function blanksOf(id){
+    return Array.from(document.getElementById(id).querySelectorAll('.blank'));
+  }
+
+  function check(){
+    var total=0, right=0;
+    allBlanks().forEach(function(inp){
+      total++;
+      var ok = normalize(inp.value) === normalize(inp.dataset.answer);
+      inp.classList.remove('ok','bad');
+      inp.classList.add(ok ? 'ok' : 'bad');
+      if(ok) right++;
+    });
+    showScores(right,total);
+    // кнопка ответов доступна только после прохождения диктанта
+    document.getElementById('answersBtn').style.display='inline-block';
+  }
+
+  function showScores(right,total){
+    function msg(el,sectionRight,sectionTotal){
+      el.className = 'score ' + (sectionRight===sectionTotal ? 'good' : (sectionRight/sectionTotal>=0.6?'':'poor'));
+      el.textContent = sectionTotal>0
+        ? 'Текст: ' + sectionRight + ' / ' + sectionTotal + (sectionRight===sectionTotal ? ' · 太好了！🎉' : '')
+        : '';
+    }
+    var t1 = blanksOf('text1'), t2 = blanksOf('text2');
+    var r1 = t1.filter(function(i){return i.classList.contains('ok');}).length;
+    var r2 = t2.filter(function(i){return i.classList.contains('ok');}).length;
+    msg(document.getElementById('score1'), r1, t1.length);
+    msg(document.getElementById('score2'), r2, t2.length);
+    var totalEl = document.getElementById('scoreTotal');
+    totalEl.className = 'score ' + (right===total?'good':'');
+    totalEl.textContent = 'Итого: ' + right + ' / ' + total + (right===total ? ' · Отлично! 很好！' : '');
+  }
+
+  // подсказки для новых слов: нажатие (тачскрин) включает/выключает
+  document.addEventListener('click', function(e){
+    var w = e.target.closest ? e.target.closest('.word') : null;
+    document.querySelectorAll('.word.show').forEach(function(el){
+      if(el !== w) el.classList.remove('show');
+    });
+    if(w) w.classList.toggle('show');
+  });
+
+  document.getElementById('checkBtn').addEventListener('click', check);
+
+  document.getElementById('answersBtn').addEventListener('click', function(){
+    answersVisible = !answersVisible;
+    allBlanks().forEach(function(inp){
+      if(answersVisible){
+        inp.value = inp.dataset.answer;
+        inp.classList.remove('bad');
+        inp.classList.add('ok');
+      } else {
+        inp.value = '';
+        inp.classList.remove('ok','bad');
+      }
+    });
+    this.textContent = answersVisible ? 'Скрыть ответы' : 'Показать ответы';
+    if(answersVisible){
+      var n = allBlanks().length;
+      showScores(n,n);
+    } else {
+      document.getElementById('score1').textContent='';
+      document.getElementById('score2').textContent='';
+      document.getElementById('scoreTotal').textContent='';
+    }
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    allBlanks().forEach(function(inp){
+      inp.value=''; inp.classList.remove('ok','bad');
+    });
+    answersVisible=false;
+    document.getElementById('answersBtn').textContent='Показать ответы';
+    document.getElementById('answersBtn').style.display='none';
+    document.getElementById('score1').textContent='';
+    document.getElementById('score2').textContent='';
+    document.getElementById('scoreTotal').textContent='';
+  });
+
+  document.getElementById('flipBtn').addEventListener('click', function(){
+    var stage = document.getElementById('stage');
+    stage.classList.toggle('flipped');
+    this.textContent = stage.classList.contains('flipped')
+      ? '✏️ Вернуться к диктанту'
+      : '📖 口语 · разговорные варианты';
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  // Enter в поле = проверка
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Enter' && e.target.classList.contains('blank')){ check(); }
+  });
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"4655f3c58dd6497fb7ddb85b68480db7","spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
