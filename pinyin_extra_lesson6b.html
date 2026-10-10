@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Доп. диктант 2: тоны (урок 6)</title>
+<style>
+body{margin:0;padding:16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;color:#1a1a1a;font-size:16px;line-height:24px;background:#fff}
+button,input{font:inherit}
+.pq-title{font-size:17px;font-weight:500}
+.pq-sub{font-size:12px;color:#777;margin-top:2px}
+.pq-name{margin-top:8px;width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:10px;padding:8px 12px}
+.pq-words{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.pq-word{border:1px solid #e0e0e0;border-radius:10px;padding:7px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff}
+.pq-word.ok{border-color:#1f9d55}
+.pq-word.bad{border-color:#d64545}
+.pq-num{font-size:12px;color:#aaa;width:22px;font-variant-numeric:tabular-nums}
+.pq-pre{font-size:16px;font-weight:500}
+.pq-syl{display:flex;align-items:center;gap:4px}
+.pq-base{font-size:16px;font-weight:500;min-width:28px}
+.pq-tones{display:flex;gap:2px}
+.pq-tn{width:22px;height:22px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#666;cursor:pointer;font-size:12px;line-height:1;padding:0}
+.pq-tn.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.pq-fb{font-size:12px;color:#888}
+.pq-word.ok .pq-fb{color:#1f9d55}
+.pq-word.bad .pq-fb{color:#d64545}
+.pq-foot{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.pq-btn{border:1px solid #1a1a1a;background:#1a1a1a;color:#fff;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer}
+.pq-btn.ghost{background:#fff;color:#1a1a1a}
+.pq-total{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+.pq-legend{font-size:12px;color:#888;margin-top:8px}
+audio{max-width:100%;height:36px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="pq-title">Дополнительный диктант 2 · 听录音，给下面的拼音标上声调</div>
+<div class="pq-sub">12 слов · 24 слога · 1 балл за слог · оценка из 10</div>
+<input class="pq-name" id="pqName" placeholder="Имя и группа (обязательно)">
+<audio controls preload="auto" src="6-1-6.mp3"></audio>
+<div class="pq-words" id="pqWords"></div>
+<div class="pq-legend">Нажми кнопку с тоном (ˉ ˊ ˇ ˋ) для каждого слога из аудио; во вторых слогах доступен нейтральный тон (кнопка •). Первая проверка показывает только верно/неверно; если проверить слог второй раз — покажется правильный ответ.</div>
+<div class="pq-foot">
+  <button class="pq-btn" id="pqCheck">Проверить</button>
+  <button class="pq-btn ghost" id="pqReset">Сбросить всё</button>
+  <span class="pq-total" id="pqTotal">Итог: — / 24</span>
+</div>
+<div class="pq-foot" style="margin-top:8px">
+  <button class="pq-btn ghost" id="pqSend">Отправить результат</button>
+</div>
+<script>
+(function(){
+// === НАСТРОЙКА ===
+// Аудио лежит рядом с этим файлом под именем 6-1-6.mp3
+// Отправка результата в Telegram (токен бота и твой chat_id):
+var TG={token:"8801191281:AAF3e7YFahud1iQkpgcRxa-bVMgK0yczY2o",chatId:"336572322"};
+var MAX=24;
+// [иероглифы, данный текст (или ""), [[слог,[тон],нейтральный ли],...]]
+var WORDS=[
+["美好","",[["mei",[3],false],["hao",[3],true]]],
+["朋友","",[["peng",[2],false],["you",[5],true]]],
+["真正","",[["zhen",[1],false],["zheng",[4],true]]],
+["哪国","",[["na",[3],false],["guo",[2],true]]],
+["人民","",[["ren",[2],false],["min",[2],true]]],
+["天才","",[["tian",[1],false],["cai",[2],true]]],
+["词语","",[["ci",[2],false],["yu",[3],true]]],
+["热闹","",[["re",[4],false],["nao",[5],true]]],
+["反映","",[["fan",[3],false],["ying",[4],true]]],
+["满意","",[["man",[3],false],["yi",[4],true]]],
+["认真","",[["ren",[4],false],["zhen",[1],true]]],
+["努力","",[["nu",[3],false],["li",[4],true]]]
+];
+var MAP={a:["ā","á","ǎ","à"],e:["ē","é","ě","è"],i:["ī","í","ǐ","ì"],o:["ō","ó","ǒ","ò"],u:["ū","ú","ǔ","ù"],"ü":["ǖ","ǘ","ǚ","ǜ"]};
+function mark(base,tone){
+  if(!base||!tone)return base||"";
+  var idx=-1;
+  if(base.indexOf("a")>-1)idx=base.indexOf("a");
+  else if(base.indexOf("e")>-1)idx=base.indexOf("e");
+  else if(base.indexOf("o")>-1)idx=base.indexOf("o");
+  else{var vs=base.match(/[iuü]/g);if(!vs)return base;idx=base.lastIndexOf(vs[vs.length-1]);}
+  var ch=base.charAt(idx),rep=MAP[ch]&&MAP[ch][tone-1];
+  return base.slice(0,idx)+(rep||ch)+base.slice(idx+1);
+}
+function gradeOf(s){return Math.round(s/MAX*10);}
+function gradeWord(g){return g>=9?"отлично":(g>=7?"хорошо":(g>=6?"удовлетворительно":"неудовлетворительно"));}
+var items=[];
+var wrap=document.getElementById("pqWords");
+WORDS.forEach(function(w,i){
+  var card=document.createElement("div");card.className="pq-word";
+  var n=document.createElement("span");n.className="pq-num";n.textContent=(i+1)+".";
+  card.appendChild(n);
+  if(w[1]){var pre=document.createElement("span");pre.className="pq-pre";pre.textContent=w[1];card.appendChild(pre);}
+  w[2].forEach(function(s){
+    var box=document.createElement("span");box.className="pq-syl";
+    var neutral=s[2];
+    box.innerHTML='<span class="pq-base">'+s[0]+'</span><span class="pq-tones">'+
+     (neutral?[1,2,3,4,5]:[1,2,3,4]).map(function(t){return '<button type="button" class="pq-tn" data-t="'+t+'">'+["ˉ","ˊ","ˇ","ˋ","•"][t-1]+"</button>"}).join("")+
+     '</span><span class="pq-fb"></span>';
+    var it={base:s[0],allowed:s[1],hz:w[0],tone:0,pts:0,checks:0,card:card,fb:box.querySelector(".pq-fb"),btns:box.querySelectorAll(".pq-tn")};
+    var nb=neutral?5:4;
+    for(var k=0;k<nb;k++){(function(b){b.addEventListener("click",function(){it.tone=(it.tone===+b.dataset.t)?0:+b.dataset.t;
+      for(var j=0;j<nb;j++)it.btns[j].classList.toggle("on",it.tone===j+1);});})(it.btns[k]);}
+    items.push(it);card.appendChild(box);
+  });
+  wrap.appendChild(card);
+});
+var score=null;
+function check(){
+  var sc=0;
+  items.forEach(function(it){
+    var ok=it.tone>0&&it.allowed.indexOf(it.tone)>-1;
+    it.pts=ok?1:0;
+    it.card.classList.remove("ok","bad");
+    if(ok){sc++;it.card.classList.add("ok");it.fb.textContent="✓";}
+    else{
+      it.checks++;it.card.classList.add("bad");
+      it.fb.textContent=(it.checks>=2)?("→ "+it.allowed.map(function(t){return mark(it.base,t)}).join(" / ")+" ("+it.hz+")"):"✗";
+    }
+  });
+  return sc;
+}
+function totals(){
+  var t="Итог: "+(score==null?"—":score)+" / "+MAX;
+  if(score!=null){var g=gradeOf(score);t+=" · оценка "+g+" ("+gradeWord(g)+")";}
+  document.getElementById("pqTotal").textContent=t;
+}
+document.getElementById("pqCheck").addEventListener("click",function(){
+  var nmEl=document.getElementById("pqName");
+  if(!nmEl.value.trim()){alert("Сначала впиши имя и группу.");nmEl.focus();return;}
+  score=check();totals();
+});
+document.getElementById("pqReset").addEventListener("click",function(){
+  items.forEach(function(it){it.tone=0;it.pts=0;it.checks=0;it.fb.textContent="";it.card.classList.remove("ok","bad");
+    for(var j=0;j<it.btns.length;j++)it.btns[j].classList.remove("on");});
+  score=null;totals();
+});
+function copyFallback(msg){
+  var ta=document.createElement("textarea");ta.value=msg;document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy")}catch(e){}
+  document.body.removeChild(ta);
+}
+document.getElementById("pqSend").addEventListener("click",function(){
+  var nmEl=document.getElementById("pqName");
+  var name=nmEl.value.trim();
+  if(!name){alert("Сначала впиши имя и группу.");nmEl.focus();return;}
+  if(score==null){alert("Сначала нажми «Проверить».");return;}
+  var g=gradeOf(score);
+  var wrong=items.filter(function(it){return it.pts<1}).map(function(it){
+    return it.base+" → "+it.allowed.map(function(t){return mark(it.base,t)}).join("/")+" ("+it.hz+")";});
+  var msg="Результат доп. диктанта 2 (урок 6, тоны)"+(name?(" — "+name):"")+": "+score+"/"+MAX+" (оценка "+g+" — "+gradeWord(g)+").";
+  if(wrong.length)msg+="\nОшибки: "+wrong.join("; ")+".";
+  else msg+="\nОшибок нет, отлично!";
+  if(!TG.token||!TG.chatId){copyFallback(msg);alert("Telegram не настроен — результат скопирован в буфер обмена.");return;}
+  var btn=document.getElementById("pqSend");btn.disabled=true;btn.textContent="Отправка…";
+  fetch("https://api.telegram.org/bot"+TG.token+"/sendMessage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:TG.chatId,text:msg})})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      btn.disabled=false;btn.textContent="Отправить результат";
+      if(d.ok){alert("Результат отправлен учителю.");}
+      else{copyFallback(msg);alert("Не отправилось ("+(d.description||"ошибка")+") — результат скопирован, отправь вручную.");}
+    })
+    .catch(function(){btn.disabled=false;btn.textContent="Отправить результат";copyFallback(msg);alert("Нет связи — результат скопирован в буфер обмена.");});
+});
+})();
+</script>
+</body>
+</html>
