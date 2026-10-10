@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Диктант урока 7: пиньинь и иероглифы</title>
+<style>
+body{margin:0;padding:16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;color:#1a1a1a;font-size:16px;line-height:24px;background:#fff}
+button,input{font:inherit}
+.pq-title{font-size:17px;font-weight:500}
+.pq-sub{font-size:12px;color:#777;margin-top:2px}
+.pq-name{margin-top:8px;width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:10px;padding:8px 12px}
+.pq-words{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.pq-word{border:1px solid #e0e0e0;border-radius:10px;padding:7px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff}
+.pq-word.ok{border-color:#1f9d55}
+.pq-word.bad{border-color:#d64545}
+.pq-word.part{border-color:#d97706}
+.pq-num{font-size:12px;color:#aaa;width:22px;font-variant-numeric:tabular-nums}
+.pq-syl{display:flex;align-items:center;gap:3px}
+.pq-in{width:64px;border:none;border-bottom:1px solid #999;background:transparent;padding:2px;font-size:16px;outline:none;text-align:center}
+.pq-prev{min-width:20px;font-size:15px;color:#666}
+.pq-tones{display:flex;gap:2px}
+.pq-tn{width:22px;height:22px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#666;cursor:pointer;font-size:12px;line-height:1;padding:0}
+.pq-tn.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.pq-hz{width:88px;border:1px solid #ddd;border-radius:8px;padding:3px 8px;font-size:17px;outline:none;text-align:center}
+.pq-hz:focus{border-color:#1a1a1a}
+.pq-fb{font-size:12px;color:#888}
+.pq-word.ok .pq-fb{color:#1f9d55}
+.pq-word.bad .pq-fb{color:#d64545}
+.pq-word.part .pq-fb{color:#d97706}
+.pq-hzfb{font-size:12px;color:#888}
+.pq-hzok{color:#1f9d55;font-weight:500}
+.pq-foot{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.pq-btn{border:1px solid #1a1a1a;background:#1a1a1a;color:#fff;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer}
+.pq-btn.ghost{background:#fff;color:#1a1a1a}
+.pq-total{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+.pq-legend{font-size:12px;color:#888;margin-top:8px}
+audio{max-width:100%;height:36px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="pq-title">Диктант урока 7 · 边听边写出词语的拼音和汉字</div>
+<div class="pq-sub">14 слов · 21 слог · пиньинь: буквы 1 + тон 1 за слог (макс. 42) · иероглифы — за поощрение, без баллов</div>
+<input class="pq-name" id="pqName" placeholder="Имя и группа (обязательно)">
+<audio controls preload="auto" src="7-3-1.mp3"></audio>
+<div class="pq-words" id="pqWords"></div>
+<div class="pq-legend">Напиши полный пиньинь каждого слога (инициаль + финаль, v = ü) и выбери тон; можно вставить слог с тоном (wǔ) или ввести цифру тона (wu3). Второе поле — иероглифы: введёшь верно — «молодец», ошибёшься или оставишь пустым — ничего страшного, на оценку не влияет. Первая проверка показывает только верно/неверно; вторая — правильные ответы.</div>
+<div class="pq-foot">
+  <button class="pq-btn" id="pqCheck">Проверить</button>
+  <button class="pq-btn ghost" id="pqReset">Сбросить всё</button>
+  <span class="pq-total" id="pqTotal">Итог: — / 42</span>
+</div>
+<div class="pq-foot" style="margin-top:8px">
+  <button class="pq-btn ghost" id="pqSend">Отправить результат</button>
+</div>
+<script>
+(function(){
+// === НАСТРОЙКА ===
+// Аудио лежит рядом с этим файлом под именем 7-3-1.mp3
+// Отправка результата в Telegram (токен бота и твой chat_id):
+var TG={token:"8801191281:AAF3e7YFahud1iQkpgcRxa-bVMgK0yczY2o",chatId:"336572322"};
+var MAX=42;
+// [иероглифы, [[слог без тона, тон, нейтральный ли],...]]
+var WORDS=[
+["哪儿",[["nar",3,false]]],
+["那儿",[["nar",4,false]]],
+["去",[["qu",4,false]]],
+["寄",[["ji",4,false]]],
+["取",[["qu",3,false]]],
+["前",[["qian",2,false]]],
+["见",[["jian",4,false]]],
+["北京",[["bei",3,false],["jing",1,true]]],
+["银行",[["yin",2,false],["hang",2,true]]],
+["邮局",[["you",2,false],["ju",2,true]]],
+["学校",[["xue",2,false],["xiao",4,true]]],
+["星期",[["xing",1,false],["qi",1,true]]],
+["再见",[["zai",4,false],["jian",4,true]]],
+["今天",[["jin",1,false],["tian",1,true]]]
+];
+var STRIP={"ā":["a",1],"á":["a",2],"ǎ":["a",3],"à":["a",4],"ē":["e",1],"é":["e",2],"ě":["e",3],"è":["e",4],"ī":["i",1],"í":["i",2],"ǐ":["i",3],"ì":["i",4],"ō":["o",1],"ó":["o",2],"ǒ":["o",3],"ò":["o",4],"ū":["u",1],"ú":["u",2],"ǔ":["u",3],"ù":["u",4],"ǖ":["ü",1],"ǘ":["ü",2],"ǚ":["ü",3],"ǜ":["ü",4]};
+var MAP={a:["ā","á","ǎ","à"],e:["ē","é","ě","è"],i:["ī","í","ǐ","ì"],o:["ō","ó","ǒ","ò"],u:["ū","ú","ǔ","ù"],"ü":["ǖ","ǘ","ǚ","ǜ"]};
+function mark(base,tone){
+  if(!base||!tone)return base||"";
+  var idx=-1;
+  if(base.indexOf("a")>-1)idx=base.indexOf("a");
+  else if(base.indexOf("e")>-1)idx=base.indexOf("e");
+  else if(base.indexOf("o")>-1)idx=base.indexOf("o");
+  else{var vs=base.match(/[iuü]/g);if(!vs)return base;idx=base.lastIndexOf(vs[vs.length-1]);}
+  var ch=base.charAt(idx),rep=MAP[ch]&&MAP[ch][tone-1];
+  return base.slice(0,idx)+(rep||ch)+base.slice(idx+1);
+}
+function norm(s){s=(s||"").toLowerCase().replace(/v/g,"ü").replace(/u:/g,"ü").trim();var syn={uei:"ui",uen:"un",iou:"iu"};return syn[s]||s;}
+function gradeOf(s){return Math.round(s/MAX*10);}
+function gradeWord(g){return g>=9?"отлично":(g>=7?"хорошо":(g>=6?"удовлетворительно":"неудовлетворительно"));}
+var words=[];
+var wrap=document.getElementById("pqWords");
+WORDS.forEach(function(w,i){
+  var card=document.createElement("div");card.className="pq-word";
+  var n=document.createElement("span");n.className="pq-num";n.textContent=(i+1)+".";
+  card.appendChild(n);
+  var syls=[];
+  w[1].forEach(function(s){
+    var box=document.createElement("span");box.className="pq-syl";
+    var neutral=s[2];
+    box.innerHTML='<input class="pq-in" maxlength="7" autocomplete="off" autocapitalize="off" spellcheck="false"><span class="pq-prev"></span><span class="pq-tones">'+
+     (neutral?[1,2,3,4,5]:[1,2,3,4]).map(function(t){return '<button type="button" class="pq-tn" data-t="'+t+'">'+["ˉ","ˊ","ˇ","ˋ","•"][t-1]+"</button>"}).join("")+
+     '</span>';
+    card.appendChild(box);
+    var it={eb:s[0],et:s[1],base:"",tone:0,pts:0,checks:0,inp:box.querySelector(".pq-in"),prev:box.querySelector(".pq-prev"),btns:box.querySelectorAll(".pq-tn")};
+    syls.push(it);
+    (function(it,neutral){
+      var nb=neutral?5:4;
+      function render(){it.prev.textContent=(it.base&&it.tone)?mark(it.base,it.tone):"";
+        for(var j=0;j<nb;j++)it.btns[j].classList.toggle("on",it.tone===j+1);}
+      it.render=render;
+      it.inp.addEventListener("input",function(){
+        var raw=it.inp.value,base="",tone=0;
+        for(var i2=0;i2<raw.length;i2++){var ch=raw.charAt(i2);
+          if(STRIP[ch]){base+=STRIP[ch][0];if(!tone)tone=STRIP[ch][1];}
+          else if(/[a-z]/.test(ch))base+=ch;
+          else if(ch==="ü"||ch==="v")base+="ü";
+          else if(/[1-5]/.test(ch)&&!tone)tone=+ch;}
+        base=norm(base);
+        it.base=base;it.inp.value=base;if(tone)it.tone=tone;render();
+      });
+      for(var k=0;k<nb;k++){(function(b){b.addEventListener("click",function(){it.tone=(it.tone===+b.dataset.t)?0:+b.dataset.t;render();it.inp.focus();});})(it.btns[k]);}
+    })(it,neutral);
+  });
+  var hzInp=document.createElement("input");hzInp.className="pq-hz";hzInp.maxLength=4;hzInp.placeholder="汉字";hzInp.autocomplete="off";
+  card.appendChild(hzInp);
+  var fb=document.createElement("span");fb.className="pq-fb";card.appendChild(fb);
+  var hzfb=document.createElement("span");hzfb.className="pq-hzfb";card.appendChild(hzfb);
+  words.push({hz:w[0],syls:syls,hzInp:hzInp,fb:fb,hzfb:hzfb,card:card,checks:0});
+  wrap.appendChild(card);
+});
+var score=null;
+function fullPinyin(wd){return wd.syls.map(function(s){return mark(s.eb,s.et)}).join(" ");}
+function check(){
+  var sc=0;
+  words.forEach(function(wd){
+    var all2=true,any0=false;
+    wd.syls.forEach(function(it){
+      var okL=norm(it.base)===norm(it.eb),okT=it.tone===it.et,pts=(okL?1:0)+(okT?1:0);
+      it.pts=pts;
+      if(pts<2)all2=false;
+      if(pts===0)any0=true;
+    });
+    var hzV=wd.hzInp.value.trim(),hzOk=hzV&&hzV===wd.hz,hzWrong=hzV&&hzV!==wd.hz;
+    wd.hzOk=!!hzOk;wd.hzWrong=!!hzWrong;
+    wd.card.classList.remove("ok","bad","part");
+    if(all2){wd.card.classList.add("ok");}
+    else if(any0){wd.card.classList.add("bad");}
+    else{wd.card.classList.add("part");}
+    if(all2){wd.fb.textContent="✓";}
+    else{
+      wd.checks++;
+      if(wd.checks>=2){
+        var det=wd.syls.map(function(it){
+          var okL=norm(it.base)===norm(it.eb),okT=it.tone===it.et;
+          if(okL&&okT)return null;
+          return (okL?"буквы ✓":"→ "+mark(it.eb,it.et))+(okT?", тон ✓":", тон → "+(it.et===5?"轻声":it.et));
+        }).filter(Boolean).join("; ");
+        wd.fb.textContent=det+" ("+wd.hz+")";
+      }else wd.fb.textContent="✗";
+    }
+    wd.hzfb.textContent=hzOk?"★ иероглифы верно!":(hzWrong?"иероглифы ещё не выучены — ничего страшного":"");
+    if(hzOk)wd.hzfb.className="pq-hzfb pq-hzok";else wd.hzfb.className="pq-hzfb";
+    wd.syls.forEach(function(it){sc+=it.pts;});
+  });
+  return sc;
+}
+function totals(){
+  var t="Итог: "+(score==null?"—":score)+" / "+MAX;
+  if(score!=null){var g=gradeOf(score);t+=" · оценка "+g+" ("+gradeWord(g)+")";}
+  document.getElementById("pqTotal").textContent=t;
+}
+document.getElementById("pqCheck").addEventListener("click",function(){
+  var nmEl=document.getElementById("pqName");
+  if(!nmEl.value.trim()){alert("Сначала впиши имя и группу.");nmEl.focus();return;}
+  score=check();totals();
+});
+document.getElementById("pqReset").addEventListener("click",function(){
+  words.forEach(function(wd){
+    wd.checks=0;wd.fb.textContent="";wd.hzfb.textContent="";wd.hzInp.value="";wd.card.classList.remove("ok","bad","part");
+    wd.syls.forEach(function(it){it.base="";it.tone=0;it.pts=0;it.checks=0;it.inp.value="";it.prev.textContent="";
+      for(var j=0;j<it.btns.length;j++)it.btns[j].classList.remove("on");});
+  });
+  score=null;totals();
+});
+function copyFallback(msg){
+  var ta=document.createElement("textarea");ta.value=msg;document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy")}catch(e){}
+  document.body.removeChild(ta);
+}
+document.getElementById("pqSend").addEventListener("click",function(){
+  var nmEl=document.getElementById("pqName");
+  var name=nmEl.value.trim();
+  if(!name){alert("Сначала впиши имя и группу.");nmEl.focus();return;}
+  if(score==null){alert("Сначала нажми «Проверить».");return;}
+  var g=gradeOf(score);
+  var wrong=[];
+  words.forEach(function(wd){
+    wd.syls.forEach(function(it){
+      if(it.pts<2)wrong.push("___ → "+mark(it.eb,it.et)+" ("+wd.hz+")");
+    });
+  });
+  var hzOk=words.filter(function(w){return w.hzOk}).length;
+  var hzWrong=words.filter(function(w){return w.hzWrong}).length;
+  var msg="Результат диктанта урока 7 «Пиньинь + иероглифы»"+(name?(" — "+name):"")+": "+score+"/"+MAX+" (оценка "+g+" — "+gradeWord(g)+").";
+  msg+="\nИероглифы: верно "+hzOk+" из 14"+(hzWrong?(" (попыток с ошибкой: "+hzWrong+")"):"")+" — на баллы не влияет.";
+  if(wrong.length)msg+="\nОшибки в пиньине: "+wrong.join("; ")+".";
+  else msg+="\nОшибок нет, отлично!";
+  if(!TG.token||!TG.chatId){copyFallback(msg);alert("Telegram не настроен — результат скопирован в буфер обмена.");return;}
+  var btn=document.getElementById("pqSend");btn.disabled=true;btn.textContent="Отправка…";
+  fetch("https://api.telegram.org/bot"+TG.token+"/sendMessage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:TG.chatId,text:msg})})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      btn.disabled=false;btn.textContent="Отправить результат";
+      if(d.ok){alert("Результат отправлен учителю.");}
+      else{copyFallback(msg);alert("Не отправилось ("+(d.description||"ошибка")+") — результат скопирован, отправь вручную.");}
+    })
+    .catch(function(){btn.disabled=false;btn.textContent="Отправить результат";copyFallback(msg);alert("Нет связи — результат скопирован в буфер обмена.");});
+});
+})();
+</script>
+</body>
+</html>
